@@ -1,0 +1,145 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "connections_twitter_name": {
+      "defaultValue": "twitter",
+      "type": "String"
+    },
+    "connections_azurequeues_name": {
+      "defaultValue": "azurequeues",
+      "type": "String"
+    },
+    "workflows_daweinssamplela50_name": {
+      "defaultValue": "daweinssamplela50",
+      "type": "String"
+    },
+    "LogicAppLocation": {
+      "type": "string",
+      "minLength": 1,
+      "allowedValues": [
+        "[resourceGroup().location]",
+        "northcentralus"
+      ],
+      "defaultValue": "northcentralus"
+    }
+  },
+  "variables": {},
+  "resources": [
+    {
+      "comments": "Generalized from resource: '/subscriptions/82e247ea-1d53-46d8-8ea4-374aa9dd4ae5/resourceGroups/daweinssamplela50/providers/Microsoft.Logic/workflows/daweinssamplela50'.",
+      "type": "Microsoft.Logic/workflows",
+      "name": "[parameters('workflows_daweinssamplela50_name')]",
+      "apiVersion": "2017-07-01",
+      "location": "[parameters('LogicAppLocation')]",
+      "tags": {
+        "displayName": "LogicApp"
+      },
+      "scale": null,
+      "properties": {
+        "state": "Enabled",
+        "definition": {
+          "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+          "actions": {
+            "Put_a_message_on_a_queue": {
+              "type": "ApiConnection",
+              "inputs": {
+                "host": {
+                  "connection": {
+                    "name": "@parameters('$connections')['azurequeues']['connectionId']"
+                  }
+                },
+                "method": "post",
+                "body": "@{concat('Found a tweet to process by',triggerBody()?['UserDetails']?['FullName'],' with contents: ',triggerBody()?['TweetText'])}",
+                "path": "/@{encodeURIComponent('test')}/messages"
+              },
+              "runAfter": {}
+            }
+          },
+          "parameters": {
+            "$connections": {
+              "defaultValue": {},
+              "type": "Object"
+            }
+          },
+          "triggers": {
+            "When_a_new_tweet_is_posted": {
+              "type": "ApiConnection",
+              "inputs": {
+                "host": {
+                  "connection": {
+                    "name": "@parameters('$connections')['twitter']['connectionId']"
+                  }
+                },
+                "method": "get",
+                "path": "/onnewtweet",
+                "queries": {
+                  "searchQuery": "#daweins"
+                }
+              },
+              "recurrence": {
+                "frequency": "Minute",
+                "interval": 1
+              },
+              "splitOn": "@triggerBody()?['value']"
+            }
+          },
+          "contentVersion": "1.0.0.0",
+          "outputs": {}
+        },
+        "parameters": {
+          "$connections": {
+            "value": {
+              "azurequeues": {
+                "id": "[concat(subscription().id, '/providers/Microsoft.Web/locations/', 'northcentralus', '/managedApis/', 'azurequeues')]",
+                "connectionId": "[resourceId('Microsoft.Web/connections', parameters('connections_azurequeues_name'))]",
+                "connectionName": "[parameters('connections_azurequeues_name')]"
+              },
+              "twitter": {
+                "id": "[concat(subscription().id, '/providers/Microsoft.Web/locations/', 'northcentralus', '/managedApis/', 'twitter')]",
+                "connectionId": "[resourceId('Microsoft.Web/connections', parameters('connections_twitter_name'))]",
+                "connectionName": "[parameters('connections_twitter_name')]"
+              }
+            }
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/connections', parameters('connections_azurequeues_name'))]",
+        "[resourceId('Microsoft.Web/connections', parameters('connections_twitter_name'))]"
+      ]
+    },
+    {
+      "comments": "Generalized from resource: '/subscriptions/82e247ea-1d53-46d8-8ea4-374aa9dd4ae5/resourceGroups/daweinssamplela50/providers/Microsoft.Web/connections/azurequeues'.",
+      "type": "Microsoft.Web/connections",
+      "name": "[parameters('connections_azurequeues_name')]",
+      "apiVersion": "2016-06-01",
+      "location": "northcentralus",
+      "scale": null,
+      "properties": {
+        "displayName": "daweinssample10queue",
+        "customParameterValues": {},
+        "api": {
+          "id": "[concat('/subscriptions/82e247ea-1d53-46d8-8ea4-374aa9dd4ae5/providers/Microsoft.Web/locations/northcentralus/managedApis/', parameters('connections_azurequeues_name'))]"
+        }
+      },
+      "dependsOn": []
+    },
+    {
+      "comments": "Generalized from resource: '/subscriptions/82e247ea-1d53-46d8-8ea4-374aa9dd4ae5/resourceGroups/daweinssamplela50/providers/Microsoft.Web/connections/twitter'.",
+      "type": "Microsoft.Web/connections",
+      "name": "[parameters('connections_twitter_name')]",
+      "apiVersion": "2016-06-01",
+      "location": "northcentralus",
+      "scale": null,
+      "properties": {
+        "displayName": "DaweinsS",
+        "customParameterValues": {},
+        "api": {
+          "id": "[concat('/subscriptions/82e247ea-1d53-46d8-8ea4-374aa9dd4ae5/providers/Microsoft.Web/locations/northcentralus/managedApis/', parameters('connections_twitter_name'))]"
+        }
+      },
+      "dependsOn": []
+    }
+  ]
+}
